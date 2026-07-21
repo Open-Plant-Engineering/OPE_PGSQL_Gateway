@@ -9,7 +9,9 @@ from gee.grpc.generated import (
 from gee.execution.execution_engine import ExecutionEngine
 from gee.models.command import Command
 from gee.models.command_type import CommandType
-from gee.arrow.serializer import ArrowSerializer
+from gee.arrow.stream_serializer import (
+    ArrowStreamSerializer,
+)
 
 class ExecutionEngineService(
     execution_engine_pb2_grpc.ExecutionEngineServicer
@@ -42,12 +44,17 @@ class ExecutionEngineService(
             parameters=[],
         )
 
-        rows = await self._engine.execute(command)
 
-        payload = ArrowSerializer.serialize(rows)
+        async for batch in self._engine.stream(command):
+        
+            payload = (
+                ArrowStreamSerializer.serialize_batch(
+                    batch
+                )
+            )
 
-        yield execution_engine_pb2.CommandResponse(
-            success=True,
-            message="Success",
-            payload=payload,
-        )
+            yield execution_engine_pb2.CommandResponse(
+                success=True,
+                message="Success",
+                payload=payload,
+            )

@@ -1,7 +1,0 @@
-grpcio
-grpcio-tools
-asyncpg
-pyarrow
-protobuf
-pydantic
-structlog

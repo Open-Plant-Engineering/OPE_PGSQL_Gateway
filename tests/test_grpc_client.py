@@ -25,26 +25,28 @@ async def main():
             execution_engine_pb2.CommandRequest(
                 request_id="1",
                 type=execution_engine_pb2.SQL,
-                command="select * from generate_series(1,5) as id",
+                command="select * from generate_series(1,10000) as id",
             )
         )
 
         response_stream = stub.Execute(request)
 
+        batch_count = 0
+        
         async for response in response_stream:
-
-            print("Success:", response.success)
-            print("Message:", response.message)
-
-            source = io.BytesIO(response.payload)
-
+        
+            batch_count += 1
+        
             table = (
-                ipc.open_stream(source)
-                .read_all()
+                ipc.open_stream(
+                    io.BytesIO(response.payload)
+                ).read_all()
             )
-
-            print(table)
-            print(table.to_pydict())
+        
+            print(
+                f"Batch {batch_count}: "
+                f"{table.num_rows} rows"
+            )
 
 
 if __name__ == "__main__":

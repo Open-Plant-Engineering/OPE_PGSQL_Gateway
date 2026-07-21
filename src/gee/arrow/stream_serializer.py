@@ -8,6 +8,7 @@ class ArrowStreamSerializer:
 
     @staticmethod
     def serialize_batch(rows):
+
         if not rows:
             return b""
 

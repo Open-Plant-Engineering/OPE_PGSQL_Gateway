@@ -43,3 +43,18 @@ class ExecutionEngine:
         raise NotImplementedError(
             f"Unsupported command type: {command.type}"
         )
+
+    async def stream(self, command):
+
+        if command.type == CommandType.SQL:
+
+            async for batch in self._database.sql.stream(
+                command.command,
+                *command.parameters,
+            ):
+                yield batch
+
+        else:
+            raise NotImplementedError(
+                f"Streaming not implemented for {command.type}"
+            )
