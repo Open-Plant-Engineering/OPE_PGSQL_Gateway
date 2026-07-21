@@ -18,7 +18,14 @@ enum CommandType {
 
 message Parameter {
     string name = 1;
-    string value = 2;
+
+    oneof value {
+        string string_value = 2;
+        int64 int_value = 3;
+        double double_value = 4;
+        bool bool_value = 5;
+        bytes bytes_value = 6;
+    }
 }
 
 message CommandRequest {

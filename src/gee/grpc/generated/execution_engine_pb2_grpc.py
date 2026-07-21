@@ -3,7 +3,9 @@
 import grpc
 import warnings
 
-import execution_engine_pb2 as execution__engine__pb2
+from gee.grpc.generated import (
+    execution_engine_pb2 as execution__engine__pb2
+)
 
 GRPC_GENERATED_VERSION = '1.82.1'
 GRPC_VERSION = grpc.__version__
