@@ -38,10 +38,31 @@ class ExecutionEngineService(
                 f"Unsupported command type: {request.type}"
             )
 
+        parameters = []
+
+        for p in request.parameters:
+        
+            field_name = p.WhichOneof("value")
+
+            if field_name == "string_value":
+                parameters.append(p.string_value)
+
+            elif field_name == "int_value":
+                parameters.append(p.int_value)
+
+            elif field_name == "double_value":
+                parameters.append(p.double_value)
+
+            elif field_name == "bool_value":
+                parameters.append(p.bool_value)
+
+            elif field_name == "bytes_value":
+                parameters.append(p.bytes_value)
+        
         command = Command(
             type=cmd_type,
             command=request.command,
-            parameters=[],
+            parameters=parameters,
         )
 
 

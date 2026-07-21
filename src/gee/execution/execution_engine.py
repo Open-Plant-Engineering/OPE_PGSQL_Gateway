@@ -54,6 +54,20 @@ class ExecutionEngine:
             ):
                 yield batch
 
+        elif command.type == CommandType.FUNCTION:
+
+            schema = command.parameters[0]
+            function_name = command.parameters[1]
+
+            params = command.parameters[2:]
+
+            async for batch in self._database.function.stream(
+                schema,
+                function_name,
+                *params,
+            ):
+                yield batch
+
         else:
             raise NotImplementedError(
                 f"Streaming not implemented for {command.type}"

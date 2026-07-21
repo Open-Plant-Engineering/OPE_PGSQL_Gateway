@@ -8,6 +8,7 @@ service ExecutionEngine {
 
     rpc ExecuteStream(stream CommandChunk)
         returns (stream CommandResponse);
+
 }
 
 enum CommandType {
@@ -51,3 +52,10 @@ message CommandResponse {
 
     bytes payload = 3;
 }
+
+message ProcedureInputChunk {
+    string session_id = 1;
+
+    bytes arrow_payload = 2;
+}
+

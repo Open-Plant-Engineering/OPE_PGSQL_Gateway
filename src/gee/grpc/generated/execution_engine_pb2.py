@@ -24,15 +24,15 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x65xecution_engine.proto\x12\x06gee.v1\"\x94\x01\n\tParameter\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x16\n\x0cstring_value\x18\x02 \x01(\tH\x00\x12\x13\n\tint_value\x18\x03 \x01(\x03H\x00\x12\x16\n\x0c\x64ouble_value\x18\x04 \x01(\x01H\x00\x12\x14\n\nbool_value\x18\x05 \x01(\x08H\x00\x12\x15\n\x0b\x62ytes_value\x18\x06 \x01(\x0cH\x00\x42\x07\n\x05value\"\x7f\n\x0e\x43ommandRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12!\n\x04type\x18\x02 \x01(\x0e\x32\x13.gee.v1.CommandType\x12\x0f\n\x07\x63ommand\x18\x03 \x01(\t\x12%\n\nparameters\x18\x04 \x03(\x0b\x32\x11.gee.v1.Parameter\"3\n\x0c\x43ommandChunk\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x0f\n\x07payload\x18\x02 \x01(\x0c\"D\n\x0f\x43ommandResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c*3\n\x0b\x43ommandType\x12\x07\n\x03SQL\x10\x00\x12\x0c\n\x08\x46UNCTION\x10\x01\x12\r\n\tPROCEDURE\x10\x02\x32\x93\x01\n\x0f\x45xecutionEngine\x12<\n\x07\x45xecute\x12\x16.gee.v1.CommandRequest\x1a\x17.gee.v1.CommandResponse0\x01\x12\x42\n\rExecuteStream\x12\x14.gee.v1.CommandChunk\x1a\x17.gee.v1.CommandResponse(\x01\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x65xecution_engine.proto\x12\x06gee.v1\"\x94\x01\n\tParameter\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x16\n\x0cstring_value\x18\x02 \x01(\tH\x00\x12\x13\n\tint_value\x18\x03 \x01(\x03H\x00\x12\x16\n\x0c\x64ouble_value\x18\x04 \x01(\x01H\x00\x12\x14\n\nbool_value\x18\x05 \x01(\x08H\x00\x12\x15\n\x0b\x62ytes_value\x18\x06 \x01(\x0cH\x00\x42\x07\n\x05value\"\x7f\n\x0e\x43ommandRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12!\n\x04type\x18\x02 \x01(\x0e\x32\x13.gee.v1.CommandType\x12\x0f\n\x07\x63ommand\x18\x03 \x01(\t\x12%\n\nparameters\x18\x04 \x03(\x0b\x32\x11.gee.v1.Parameter\"3\n\x0c\x43ommandChunk\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x0f\n\x07payload\x18\x02 \x01(\x0c\"D\n\x0f\x43ommandResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c\"@\n\x13ProcedureInputChunk\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x15\n\rarrow_payload\x18\x02 \x01(\x0c*3\n\x0b\x43ommandType\x12\x07\n\x03SQL\x10\x00\x12\x0c\n\x08\x46UNCTION\x10\x01\x12\r\n\tPROCEDURE\x10\x02\x32\x93\x01\n\x0f\x45xecutionEngine\x12<\n\x07\x45xecute\x12\x16.gee.v1.CommandRequest\x1a\x17.gee.v1.CommandResponse0\x01\x12\x42\n\rExecuteStream\x12\x14.gee.v1.CommandChunk\x1a\x17.gee.v1.CommandResponse(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'execution_engine_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_COMMANDTYPE']._serialized_start=437
-  _globals['_COMMANDTYPE']._serialized_end=488
+  _globals['_COMMANDTYPE']._serialized_start=503
+  _globals['_COMMANDTYPE']._serialized_end=554
   _globals['_PARAMETER']._serialized_start=35
   _globals['_PARAMETER']._serialized_end=183
   _globals['_COMMANDREQUEST']._serialized_start=185
@@ -41,6 +41,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_COMMANDCHUNK']._serialized_end=365
   _globals['_COMMANDRESPONSE']._serialized_start=367
   _globals['_COMMANDRESPONSE']._serialized_end=435
-  _globals['_EXECUTIONENGINE']._serialized_start=491
-  _globals['_EXECUTIONENGINE']._serialized_end=638
+  _globals['_PROCEDUREINPUTCHUNK']._serialized_start=437
+  _globals['_PROCEDUREINPUTCHUNK']._serialized_end=501
+  _globals['_EXECUTIONENGINE']._serialized_start=557
+  _globals['_EXECUTIONENGINE']._serialized_end=704
 # @@protoc_insertion_point(module_scope)
