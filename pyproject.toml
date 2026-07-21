@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gee"
+version = "0.1.0"
+description = "Generic Execution Engine"
+readme = "README.md"
+requires-python = ">=3.13"
+
+dependencies = [
+    "grpcio",
+    "grpcio-tools",
+    "asyncpg",
+    "pyarrow",
+    "protobuf",
+    "pydantic",
+    "structlog"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
