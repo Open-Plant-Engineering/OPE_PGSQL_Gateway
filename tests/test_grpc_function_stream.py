@@ -58,7 +58,6 @@ async def test_grpc_function_stream():
         )
 
         request = execution_engine_pb2.CommandRequest(
-            request_id="1",
             type=execution_engine_pb2.FUNCTION,
             command="execute_function",
         )

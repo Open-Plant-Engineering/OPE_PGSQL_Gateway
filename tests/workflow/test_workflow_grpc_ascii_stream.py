@@ -11,7 +11,10 @@ from gee.grpc.generated import (
 
 
 @pytest.mark.asyncio
-async def test_grpc_sql_stream():
+async def test_workflow_grpc_ascii_stream():
+    """
+    Stream all 50,000 rows through gRPC.
+    """
 
     async with grpc.aio.insecure_channel(
         "localhost:50051"
@@ -26,20 +29,20 @@ async def test_grpc_sql_stream():
         request = (
             execution_engine_pb2.CommandRequest(
                 type=execution_engine_pb2.SQL,
-                command="select * from generate_series(1,10000) as id",
+                command="""
+                SELECT *
+                FROM workflow_ascii
+                ORDER BY id
+                """
             )
         )
-
-        response_stream = stub.Execute(request)
 
         batch_count = 0
         total_rows = 0
 
-        async for response in response_stream:
+        async for response in stub.Execute(request):
 
             assert response.success is True
-
-            batch_count += 1
 
             table = (
                 ipc.open_stream(
@@ -47,7 +50,8 @@ async def test_grpc_sql_stream():
                 ).read_all()
             )
 
+            batch_count += 1
             total_rows += table.num_rows
 
-        assert batch_count == 10
-        assert total_rows == 10000
+        assert total_rows == 50000
+        assert batch_count == 50

@@ -65,17 +65,32 @@ class ExecutionEngineService(
             parameters=parameters,
         )
 
-
-        async for batch in self._engine.stream(command):
+        if command.type == CommandType.PROCEDURE:
         
-            payload = (
-                ArrowStreamSerializer.serialize_batch(
-                    batch
-                )
+            result = await self._engine.execute(
+                command
             )
 
             yield execution_engine_pb2.CommandResponse(
-                success=True,
+                success=result,
                 message="Success",
-                payload=payload,
+                payload=b"",
             )
+
+        else:
+        
+            async for batch in self._engine.stream(
+                command
+            ):
+
+                payload = (
+                    ArrowStreamSerializer.serialize_batch(
+                        batch
+                    )
+                )
+
+                yield execution_engine_pb2.CommandResponse(
+                    success=True,
+                    message="Success",
+                    payload=payload,
+                )

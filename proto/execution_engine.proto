@@ -30,13 +30,11 @@ message Parameter {
 }
 
 message CommandRequest {
-    string request_id = 1;
+    CommandType type = 1;
 
-    CommandType type = 2;
+    string command = 2;
 
-    string command = 3;
-
-    repeated Parameter parameters = 4;
+    repeated Parameter parameters = 3;
 }
 
 message CommandChunk {
