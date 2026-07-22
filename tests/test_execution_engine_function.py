@@ -1,4 +1,4 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
@@ -10,7 +10,8 @@ from gee.models.command import Command
 from gee.models.command_type import CommandType
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_execution_engine_function():
 
     settings = Settings()
 
@@ -25,6 +26,21 @@ async def main():
     )
 
     db = DatabaseService(pool)
+
+    await db.sql.execute(
+        """
+        CREATE OR REPLACE FUNCTION public.add_numbers(
+            a integer,
+            b integer
+        )
+        RETURNS integer
+        AS $$
+        BEGIN
+            RETURN a + b;
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
 
     engine = ExecutionEngine(db)
 
@@ -46,8 +62,3 @@ async def main():
     result = rows[0]["add_numbers"]
 
     assert result == 30
-
-    print(f"SUCCESS: 10 + 20 = {result}")
-
-
-asyncio.run(main())

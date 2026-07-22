@@ -1,11 +1,13 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
 from gee.postgres.database import DatabaseService
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_procedure_execute():
+
     settings = Settings()
 
     pool = PostgresPool()
@@ -20,13 +22,24 @@ async def main():
 
     db = DatabaseService(pool)
 
+    await db.sql.execute(
+        """
+        CREATE OR REPLACE PROCEDURE public.test_procedure(
+            msg text
+        )
+        LANGUAGE plpgsql
+        AS $$
+        BEGIN
+            RAISE NOTICE 'Message: %', msg;
+        END;
+        $$;
+        """
+    )
+
     result = await db.procedure.execute(
         "public",
         "test_procedure",
         "Hello World",
     )
 
-    print(result)
-
-
-asyncio.run(main())
+    assert result is True

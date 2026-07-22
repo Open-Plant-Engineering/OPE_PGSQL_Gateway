@@ -1,4 +1,4 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
@@ -9,7 +9,8 @@ from gee.arrow.stream_serializer import (
 )
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_sql_stream():
 
     settings = Settings()
 
@@ -25,6 +26,9 @@ async def main():
 
     db = DatabaseService(pool)
 
+    total_rows = 0
+    total_batches = 0
+
     async for batch in db.sql.stream(
         "select * from generate_series(1,5000) id"
     ):
@@ -35,10 +39,11 @@ async def main():
             )
         )
 
-        print(
-            f"Rows={len(batch)} "
-            f"Bytes={len(payload)}"
-        )
+        assert payload is not None
+        assert len(payload) > 0
 
+        total_batches += 1
+        total_rows += len(batch)
 
-asyncio.run(main())
+    assert total_batches == 5
+    assert total_rows == 5000

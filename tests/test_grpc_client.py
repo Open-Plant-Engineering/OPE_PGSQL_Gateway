@@ -1,7 +1,8 @@
-import asyncio
-import grpc
-import pyarrow.ipc as ipc
 import io
+
+import grpc
+import pytest
+import pyarrow.ipc as ipc
 
 from gee.grpc.generated import (
     execution_engine_pb2,
@@ -9,7 +10,8 @@ from gee.grpc.generated import (
 )
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_grpc_sql_stream():
 
     async with grpc.aio.insecure_channel(
         "localhost:50051"
@@ -32,22 +34,21 @@ async def main():
         response_stream = stub.Execute(request)
 
         batch_count = 0
-        
+        total_rows = 0
+
         async for response in response_stream:
-        
+
+            assert response.success is True
+
             batch_count += 1
-        
+
             table = (
                 ipc.open_stream(
                     io.BytesIO(response.payload)
                 ).read_all()
             )
-        
-            print(
-                f"Batch {batch_count}: "
-                f"{table.num_rows} rows"
-            )
 
+            total_rows += table.num_rows
 
-if __name__ == "__main__":
-    asyncio.run(main())
+        assert batch_count == 10
+        assert total_rows == 10000

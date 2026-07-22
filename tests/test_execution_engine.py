@@ -1,4 +1,4 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
@@ -10,7 +10,8 @@ from gee.models.command import Command
 from gee.models.command_type import CommandType
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_execution_engine_sql():
 
     settings = Settings()
 
@@ -31,13 +32,15 @@ async def main():
     command = Command(
         type=CommandType.SQL,
         command="select * from generate_series(1,5) as id",
-        parameters=[]
+        parameters=[],
     )
 
     rows = await engine.execute(command)
 
-    for row in rows:
-        print(dict(row))
+    assert len(rows) == 5
 
-
-asyncio.run(main())
+    assert rows[0]["id"] == 1
+    assert rows[1]["id"] == 2
+    assert rows[2]["id"] == 3
+    assert rows[3]["id"] == 4
+    assert rows[4]["id"] == 5

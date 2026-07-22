@@ -1,11 +1,13 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
 from gee.postgres.database import DatabaseService
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_get_numbers():
+
     settings = Settings()
 
     pool = PostgresPool()
@@ -20,6 +22,26 @@ async def main():
 
     db = DatabaseService(pool)
 
+    await db.sql.execute(
+        """
+        CREATE OR REPLACE FUNCTION public.get_numbers()
+        RETURNS TABLE(
+            id integer,
+            value text
+        )
+        AS $$
+        BEGIN
+            RETURN QUERY
+            SELECT 1, 'One'
+            UNION ALL
+            SELECT 2, 'Two'
+            UNION ALL
+            SELECT 3, 'Three';
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
+
     rows = await db.function.execute(
         "public",
         "get_numbers"
@@ -27,8 +49,11 @@ async def main():
 
     assert len(rows) == 3
 
-    for row in rows:
-        print(dict(row))
+    assert rows[0]["id"] == 1
+    assert rows[0]["value"] == "One"
 
+    assert rows[1]["id"] == 2
+    assert rows[1]["value"] == "Two"
 
-asyncio.run(main())
+    assert rows[2]["id"] == 3
+    assert rows[2]["value"] == "Three"

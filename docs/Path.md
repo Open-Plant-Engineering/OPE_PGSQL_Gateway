@@ -6,23 +6,91 @@ Generic Execution Engine (GEE) is a high-performance gRPC-based execution layer 
 
 The goal is to provide a single, generic, scalable execution interface capable of:
 
-* Executing arbitrary SQL statements
-* Executing PostgreSQL functions
-* Executing PostgreSQL procedures
-* Streaming large input datasets
-* Streaming large query/function result sets
-* Minimizing network traffic using Apache Arrow
-* Supporting large engineering datasets
-* Supporting tens of thousands of client connections through an asynchronous architecture
+- Executing arbitrary SQL statements
+- Executing PostgreSQL functions
+- Executing PostgreSQL procedures
+- Streaming large input datasets
+- Streaming large query and function result sets
+- Minimizing network traffic using Apache Arrow
+- Supporting large engineering datasets
+- Supporting tens of thousands of client connections through an asynchronous architecture
 
 The engine is intentionally designed to remain generic so that PostgreSQL is only the first backend implementation. Future backends may include:
 
-* PostgreSQL
-* OpeCore
-* SQL Server
-* Oracle
-* MySQL
-* Other data platforms
+- PostgreSQL
+- OpeCore
+- SQL Server
+- Oracle
+- MySQL
+- Other data platforms
+
+---
+
+# Current Implementation Status
+
+## Completed
+
+### Core Infrastructure
+
+- Python package structure
+- Conda development environment
+- pyproject.toml packaging
+- pip installable package
+- Async PostgreSQL connection pooling
+- gRPC Server
+- gRPC Client
+- Execution Engine
+- Apache Arrow serialization
+- Apache Arrow deserialization
+
+### SQL
+
+- SQL Execution
+- SQL Streaming Output
+- PostgreSQL cursor streaming
+- Apache Arrow batch conversion
+- gRPC streaming responses
+
+### Functions
+
+- Function Execution
+- Function Streaming Output
+- Table-returning Function support
+- Apache Arrow streaming
+
+### Procedures
+
+- Procedure Execution
+
+### Streaming
+
+- PostgreSQL cursor streaming
+- Apache Arrow batch streaming
+- gRPC response streaming
+
+---
+
+## Planned
+
+### Procedure Stream Input
+
+Planned architecture:
+
+```text
+Client
+    ↓
+Arrow Batch Stream
+    ↓
+Temporary Table
+    ↓
+CALL procedure(temp_table_name)
+````
+
+Status:
+
+```text
+Not Implemented Yet
+```
 
 ***
 
@@ -60,7 +128,7 @@ SELECT *
 FROM public.get_employee(100);
 ```
 
-The execution engine will execute PostgreSQL functions and stream returned data.
+The execution engine executes PostgreSQL functions and streams returned result sets.
 
 ***
 
@@ -72,27 +140,7 @@ Example:
 CALL public.import_data(...);
 ```
 
-The execution engine will execute PostgreSQL procedures.
-
-***
-
-### Streaming Input
-
-Large datasets should not be transferred as a single payload.
-
-Client sends:
-
-```text
-Chunk 1
-Chunk 2
-Chunk 3
-Chunk 4
-...
-```
-
-using gRPC streaming.
-
-The server receives chunks and stores them into a temporary dataset for processing.
+The execution engine executes PostgreSQL procedures.
 
 ***
 
@@ -240,12 +288,6 @@ Not implemented.
           |
           v
 +--------------------+
-|     PgBouncer      |
-+--------------------+
-          |
-          |
-          v
-+--------------------+
 |    PostgreSQL      |
 +--------------------+
 ```
@@ -327,14 +369,20 @@ SELECT * FROM employee;
 ### Output
 
 ```text
-Arrow Stream
+Apache Arrow Stream
 ```
 
 ### Streaming
 
 ```text
-Input  : Optional
+Input  : No
 Output : Yes
+```
+
+### Status
+
+```text
+Implemented ✅
 ```
 
 ***
@@ -343,20 +391,33 @@ Output : Yes
 
 ### Input
 
-Parameters
+Function parameters.
+
+Example:
+
+```sql
+SELECT *
+FROM public.generate_numbers(10000);
+```
 
 ### Output
 
-Function result set
+Function result set.
 
 ### Streaming
 
 ```text
-Input  : Optional
+Input  : Parameters Only
 Output : Yes
 ```
 
 Functions returning tables are streamed exactly like SQL queries.
+
+### Status
+
+```text
+Implemented ✅
+```
 
 ***
 
@@ -368,7 +429,7 @@ Parameters
 
 or
 
-Streamed Dataset
+Streamed Dataset (Planned)
 
 ### Output
 
@@ -377,96 +438,140 @@ Final execution result
 ### Streaming
 
 ```text
-Input  : Yes
-Output : No (V1)
+Input  : Planned
+Output : No
 ```
 
-Procedures execute to completion and then return a final response.
+Procedures execute to completion and return a final response.
+
+### Status
+
+```text
+Procedure Execution      ✅
+Procedure Stream Input   ❌ Planned
+```
 
 ***
 
-# Procedure Streaming Model
+# Streaming Architecture
 
-Large datasets are transferred separately.
-
-Example:
+## SQL Streaming
 
 ```text
-Create Session
-       |
-       v
-
-Upload Chunks
-       |
-       v
-
-Execute Procedure
-       |
-       v
-
-Final Result
+PostgreSQL Cursor
+         ↓
+Batch (1000 rows)
+         ↓
+Arrow Batch
+         ↓
+gRPC Stream
+         ↓
+Client
 ```
 
-Procedure receives a temporary dataset reference.
+Validated and working.
+
+***
+
+## Function Streaming
+
+```text
+PostgreSQL Function
+         ↓
+Cursor
+         ↓
+Batch (1000 rows)
+         ↓
+Arrow Batch
+         ↓
+gRPC Stream
+         ↓
+Client
+```
+
+Validated and working.
+
+***
+
+## Procedure Stream Input (Planned)
+
+```text
+Client
+    ↓
+Arrow Batch #1
+Arrow Batch #2
+Arrow Batch #3
+    ↓
+Temporary Table
+    ↓
+CALL procedure(
+    temp_table_name
+)
+```
 
 Example:
 
 ```sql
 CALL process_data(
-    'temp_dataset_123'
+    'tmp_dataset_123'
 );
 ```
 
-The procedure reads data from the temporary dataset.
+The procedure reads input data directly from the temporary table.
 
-This avoids passing millions of rows as procedure parameters.
+Benefits:
+
+* No massive payloads
+* No millions of procedure parameters
+* Memory efficient
+* Scalable
 
 ***
 
 # Apache Arrow Workflow
 
-## Query Export
+## SQL / Function Export
 
 ```text
-PostgreSQL
-    |
-    v
-Rows
-    |
-    v
+PostgreSQL Cursor
+       ↓
+Row Batch
+       ↓
 Arrow Table
-    |
-    v
-Arrow Batches
-    |
-    v
+       ↓
+Arrow Binary
+       ↓
 gRPC Stream
-    |
-    v
+       ↓
 Client
+```
+
+Status:
+
+```text
+Implemented ✅
 ```
 
 ***
 
-## Data Import
+## Procedure Import
 
 ```text
 Client
-    |
-    v
-Arrow Batches
-    |
-    v
-gRPC Stream
-    |
-    v
+      ↓
+Arrow Batch Stream
+      ↓
 Execution Engine
-    |
-    v
-Temporary Dataset
-    |
-    v
+      ↓
+Temporary Table
+      ↓
 Procedure
+```
+
+Status:
+
+```text
+Planned ❌
 ```
 
 ***
@@ -506,14 +611,6 @@ Apache Arrow
 
 ***
 
-## Connection Pooling
-
-```text
-PgBouncer
-```
-
-***
-
 ## Database
 
 ```text
@@ -522,46 +619,174 @@ PostgreSQL
 
 ***
 
+# Current Project Structure
+
+```text
+src/
+└── gee/
+    ├── arrow/
+    │   ├── serializer.py
+    │   ├── deserializer.py
+    │   └── stream_serializer.py
+    │
+    ├── execution/
+    │   ├── execution_engine.py
+    │   ├── sql_executor.py
+    │   ├── function_executor.py
+    │   └── procedure_executor.py
+    │
+    ├── postgres/
+    │   ├── database.py
+    │   └── pool.py
+    │
+    ├── grpc/
+    │   ├── server.py
+    │   ├── service.py
+    │   └── generated/
+    │
+    ├── config/
+    └── models/
+```
+
+***
+
+# Validated End-to-End Flows
+
+## SQL Streaming
+
+```text
+Client
+    ↓
+gRPC
+    ↓
+ExecutionEngine
+    ↓
+SqlExecutor.stream()
+    ↓
+PostgreSQL Cursor
+    ↓
+Arrow Batch
+    ↓
+gRPC Stream
+    ↓
+Client
+```
+
+Status:
+
+```text
+Validated ✅
+```
+
+***
+
+## Function Streaming
+
+```text
+Client
+    ↓
+gRPC
+    ↓
+ExecutionEngine
+    ↓
+FunctionExecutor.stream()
+    ↓
+PostgreSQL Function
+    ↓
+Arrow Batch
+    ↓
+gRPC Stream
+    ↓
+Client
+```
+
+Status:
+
+```text
+Validated ✅
+```
+
+***
+
 # V1 Deliverables
 
-### Phase 1
+## Completed
 
-* gRPC server
-* PostgreSQL connectivity
-* asyncpg integration
-* PgBouncer integration
+### Infrastructure
 
-### Phase 2
+* Python Package
+* Async PostgreSQL Pool
+* gRPC Server
+* gRPC Client
+* Apache Arrow
 
-* SQL execution
-* Function execution
-* Procedure execution
+### Execution Engine
 
-### Phase 3
+* SQL Executor
+* SQL Stream Executor
+* Function Executor
+* Function Stream Executor
+* Procedure Executor
 
-* Apache Arrow serialization
-* Result streaming
-* Input streaming
+### Streaming
 
-### Phase 4
+* PostgreSQL Cursor Streaming
+* Apache Arrow Batch Streaming
+* gRPC Response Streaming
 
-* Performance tuning
-* Load testing
-* Concurrent client validation
+***
+
+## Remaining
+
+### Procedure Input Streaming
+
+```text
+Arrow Upload
+    ↓
+Temporary Table
+    ↓
+Procedure Execution
+```
+
+### Performance
+
+* Benchmarking
+* Load Testing
+* Batch Size Tuning
 
 ***
 
 # Final V1 Goal
 
-Build a **generic, high-performance execution engine** capable of:
+Build a generic high-performance execution engine capable of:
 
-* Executing SQL
-* Executing Functions
-* Executing Procedures
-* Streaming input datasets
-* Streaming query/function results
-* Using Apache Arrow for efficient transport
-* Supporting very large datasets
-* Remaining scalable and backend-agnostic
+* SQL Execution
+* SQL Streaming Output
+* Function Execution
+* Function Streaming Output
+* Procedure Execution
+* Procedure Input Streaming
+* Apache Arrow Data Transfer
+* gRPC Streaming
+* Large Dataset Processing
+* Backend Agnostic Design
 
-without introducing any unnecessary enterprise features until they are actually required.
+Current Validation Status:
+
+```text
+SQL Execution            ✅
+SQL Streaming            ✅
+
+Function Execution       ✅
+Function Streaming       ✅
+
+Procedure Execution      ✅
+Procedure Stream Input   ⏳ Next
+
+Apache Arrow             ✅
+gRPC Streaming           ✅
+```
+
+The project focuses on a minimal, scalable, high-performance execution engine without introducing unnecessary enterprise features until they are required.
+
+```

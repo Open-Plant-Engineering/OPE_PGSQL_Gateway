@@ -1,4 +1,4 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
@@ -8,7 +8,9 @@ from gee.arrow.serializer import ArrowSerializer
 from gee.arrow.deserializer import ArrowDeserializer
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_arrow_roundtrip():
+
     settings = Settings()
 
     pool = PostgresPool()
@@ -23,6 +25,26 @@ async def main():
 
     db = DatabaseService(pool)
 
+    await db.sql.execute(
+        """
+        CREATE OR REPLACE FUNCTION public.get_numbers()
+        RETURNS TABLE(
+            id integer,
+            value text
+        )
+        AS $$
+        BEGIN
+            RETURN QUERY
+            SELECT 1, 'One'
+            UNION ALL
+            SELECT 2, 'Two'
+            UNION ALL
+            SELECT 3, 'Three';
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
+
     rows = await db.function.execute(
         "public",
         "get_numbers"
@@ -30,13 +52,14 @@ async def main():
 
     payload = ArrowSerializer.serialize(rows)
 
-    print(f"Payload Size: {len(payload)} bytes")
+    assert payload is not None
+    assert len(payload) > 0
 
     table = ArrowDeserializer.deserialize(payload)
 
-    print(table)
+    assert table.num_rows == 3
 
-    print(table.to_pydict())
+    data = table.to_pydict()
 
-
-asyncio.run(main())
+    assert data["id"] == [1, 2, 3]
+    assert data["value"] == ["One", "Two", "Three"]

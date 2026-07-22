@@ -1,11 +1,13 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
 from gee.postgres.database import DatabaseService
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_postgresql_connection():
+
     settings = Settings()
 
     pool = PostgresPool()
@@ -24,7 +26,9 @@ async def main():
         "select version();"
     )
 
-    print(rows)
+    assert len(rows) == 1
 
+    version = rows[0]["version"]
 
-asyncio.run(main())
+    assert version is not None
+    assert "PostgreSQL" in version

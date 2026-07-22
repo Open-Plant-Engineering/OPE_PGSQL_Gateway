@@ -1,4 +1,4 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
@@ -10,7 +10,8 @@ from gee.models.command import Command
 from gee.models.command_type import CommandType
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_execution_engine_function_table():
 
     settings = Settings()
 
@@ -25,6 +26,26 @@ async def main():
     )
 
     db = DatabaseService(pool)
+
+    await db.sql.execute(
+        """
+        CREATE OR REPLACE FUNCTION public.get_numbers()
+        RETURNS TABLE(
+            id integer,
+            value text
+        )
+        AS $$
+        BEGIN
+            RETURN QUERY
+            SELECT 1, 'One'
+            UNION ALL
+            SELECT 2, 'Two'
+            UNION ALL
+            SELECT 3, 'Three';
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
 
     engine = ExecutionEngine(db)
 
@@ -41,8 +62,11 @@ async def main():
 
     assert len(rows) == 3
 
-    for row in rows:
-        print(dict(row))
+    assert rows[0]["id"] == 1
+    assert rows[0]["value"] == "One"
 
+    assert rows[1]["id"] == 2
+    assert rows[1]["value"] == "Two"
 
-asyncio.run(main())
+    assert rows[2]["id"] == 3
+    assert rows[2]["value"] == "Three"

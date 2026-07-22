@@ -1,4 +1,4 @@
-import asyncio
+import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
@@ -10,7 +10,8 @@ from gee.models.command import Command
 from gee.models.command_type import CommandType
 
 
-async def main():
+@pytest.mark.asyncio
+async def test_execution_engine_procedure():
 
     settings = Settings()
 
@@ -25,6 +26,20 @@ async def main():
     )
 
     db = DatabaseService(pool)
+
+    await db.sql.execute(
+        """
+        CREATE OR REPLACE PROCEDURE public.test_procedure(
+            msg text
+        )
+        LANGUAGE plpgsql
+        AS $$
+        BEGIN
+            RAISE NOTICE 'Message: %', msg;
+        END;
+        $$;
+        """
+    )
 
     engine = ExecutionEngine(db)
 
@@ -41,8 +56,3 @@ async def main():
     result = await engine.execute(command)
 
     assert result is True
-
-    print("SUCCESS: Procedure Executed")
-
-
-asyncio.run(main())
