@@ -1,17 +1,17 @@
 import io
 
-import grpc
 import pytest
 import pyarrow.ipc as ipc
 
 from gee.grpc.generated import (
     execution_engine_pb2,
-    execution_engine_pb2_grpc,
 )
 
 
 @pytest.mark.asyncio
-async def test_workflow_grpc_ascii_function_update():
+async def test_workflow_grpc_ascii_function_update(
+    grpc_stub,
+):
     """
     Workflow
 
@@ -24,25 +24,18 @@ async def test_workflow_grpc_ascii_function_update():
         Validate Updated Values
     """
 
-    async with grpc.aio.insecure_channel(
-        "localhost:50051"
-    ) as channel:
-
-        stub = (
-            execution_engine_pb2_grpc.ExecutionEngineStub(
-                channel
-            )
-        )
-
-        #
-        # Update row #1 to XYZ
-        #
-        request = execution_engine_pb2.CommandRequest(
+    #
+    # Update row #1 to XYZ
+    #
+    request = (
+        execution_engine_pb2.CommandRequest(
             type=execution_engine_pb2.FUNCTION,
             command="execute_function",
         )
+    )
 
-        request.parameters.extend([
+    request.parameters.extend(
+        [
             execution_engine_pb2.Parameter(
                 name="schema",
                 string_value="public",
@@ -57,62 +50,75 @@ async def test_workflow_grpc_ascii_function_update():
             ),
             execution_engine_pb2.Parameter(
                 name="ascii1",
-                int_value=88,   # X
+                int_value=88,  # X
             ),
             execution_engine_pb2.Parameter(
                 name="ascii2",
-                int_value=89,   # Y
+                int_value=89,  # Y
             ),
             execution_engine_pb2.Parameter(
                 name="ascii3",
-                int_value=90,   # Z
+                int_value=90,  # Z
             ),
-        ])
+        ]
+    )
 
-        async for response in stub.Execute(request):
+    async def update_request_stream():
 
-            assert response.success is True
+        yield request
 
-        #
-        # Read row back
-        #
-        sql_request = (
-            execution_engine_pb2.CommandRequest(
-                type=execution_engine_pb2.SQL,
-                command="""
-                SELECT
-                    id,
-                    ascii1,
-                    ascii2,
-                    ascii3
-                FROM workflow_ascii
-                WHERE id = 1
-                """
-            )
+    async for response in grpc_stub.Execute(
+        update_request_stream()
+    ):
+
+        assert response.success is True
+
+    #
+    # Read row back
+    #
+    sql_request = (
+        execution_engine_pb2.CommandRequest(
+            type=execution_engine_pb2.SQL,
+            command="""
+            SELECT
+                id,
+                ascii1,
+                ascii2,
+                ascii3
+            FROM workflow_ascii
+            WHERE id = 1
+            """,
+        )
+    )
+
+    async def sql_request_stream():
+
+        yield sql_request
+
+    rows_found = 0
+
+    async for response in grpc_stub.Execute(
+        sql_request_stream()
+    ):
+
+        table = (
+            ipc.open_stream(
+                io.BytesIO(
+                    response.payload
+                )
+            ).read_all()
         )
 
-        rows_found = 0
+        data = table.to_pylist()
 
-        async for response in stub.Execute(
-            sql_request
-        ):
+        assert len(data) == 1
 
-            table = (
-                ipc.open_stream(
-                    io.BytesIO(response.payload)
-                ).read_all()
-            )
+        row = data[0]
 
-            data = table.to_pylist()
+        assert row["ascii1"] == 88
+        assert row["ascii2"] == 89
+        assert row["ascii3"] == 90
 
-            assert len(data) == 1
+        rows_found += 1
 
-            row = data[0]
-
-            assert row["ascii1"] == 88
-            assert row["ascii2"] == 89
-            assert row["ascii3"] == 90
-
-            rows_found += 1
-
-        assert rows_found == 1
+    assert rows_found == 1

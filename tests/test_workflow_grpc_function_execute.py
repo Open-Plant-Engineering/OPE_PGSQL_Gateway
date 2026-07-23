@@ -1,21 +1,18 @@
 import io
 
-import grpc
 import pytest
 import pyarrow.ipc as ipc
 
-from gee.config.settings import Settings
-from gee.postgres.pool import PostgresPool
-from gee.postgres.database_service import DatabaseService
-
 from gee.grpc.generated import (
     execution_engine_pb2,
-    execution_engine_pb2_grpc,
 )
 
 
 @pytest.mark.asyncio
-async def test_workflow_grpc_function_execute(database_service):
+async def test_workflow_grpc_function_execute(
+    database_service,
+    grpc_stub,
+):
     """
     Workflow:
         Client
@@ -84,7 +81,6 @@ async def test_workflow_grpc_function_execute(database_service):
         Single Row
         Single Arrow Batch
         Single gRPC Response
-
     """
 
     await database_service.sql.execute(
@@ -102,22 +98,15 @@ async def test_workflow_grpc_function_execute(database_service):
         """
     )
 
-    async with grpc.aio.insecure_channel(
-        "localhost:50051"
-    ) as channel:
-
-        stub = (
-            execution_engine_pb2_grpc.ExecutionEngineStub(
-                channel
-            )
-        )
-
-        request = execution_engine_pb2.CommandRequest(
+    request = (
+        execution_engine_pb2.CommandRequest(
             type=execution_engine_pb2.FUNCTION,
             command="execute_function",
         )
+    )
 
-        request.parameters.extend([
+    request.parameters.extend(
+        [
             execution_engine_pb2.Parameter(
                 name="schema",
                 string_value="public",
@@ -134,24 +123,33 @@ async def test_workflow_grpc_function_execute(database_service):
                 name="b",
                 int_value=20,
             ),
-        ])
+        ]
+    )
 
-        rows_received = 0
+    async def request_stream():
 
-        async for response in stub.Execute(request):
+        yield request
 
-            assert response.success is True
+    rows_received = 0
 
-            table = (
-                ipc.open_stream(
-                    io.BytesIO(response.payload)
-                ).read_all()
-            )
+    async for response in grpc_stub.Execute(
+        request_stream()
+    ):
 
-            data = table.to_pydict()
+        assert response.success is True
 
-            assert data["add_numbers"] == [30]
+        table = (
+            ipc.open_stream(
+                io.BytesIO(
+                    response.payload
+                )
+            ).read_all()
+        )
 
-            rows_received += table.num_rows
+        data = table.to_pydict()
 
-        assert rows_received == 1
+        assert data["add_numbers"] == [30]
+
+        rows_received += table.num_rows
+
+    assert rows_received == 1

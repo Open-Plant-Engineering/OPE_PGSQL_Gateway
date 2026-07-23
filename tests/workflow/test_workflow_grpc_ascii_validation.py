@@ -1,17 +1,17 @@
 import io
 
-import grpc
 import pytest
 import pyarrow.ipc as ipc
 
 from gee.grpc.generated import (
     execution_engine_pb2,
-    execution_engine_pb2_grpc,
 )
 
 
 @pytest.mark.asyncio
-async def test_workflow_grpc_ascii_validation():
+async def test_workflow_grpc_ascii_validation(
+    grpc_stub,
+):
     """
     Workflow
 
@@ -26,27 +26,18 @@ async def test_workflow_grpc_ascii_validation():
         Validate 100 Rows
     """
 
-    async with grpc.aio.insecure_channel(
-        "localhost:50051"
-    ) as channel:
-
-        stub = (
-            execution_engine_pb2_grpc.ExecutionEngineStub(
-                channel
-            )
+    #
+    # Execute procedure through gRPC
+    #
+    procedure_request = (
+        execution_engine_pb2.CommandRequest(
+            type=execution_engine_pb2.PROCEDURE,
+            command="execute_procedure",
         )
+    )
 
-        #
-        # Execute procedure through gRPC
-        #
-        procedure_request = (
-            execution_engine_pb2.CommandRequest(
-                type=execution_engine_pb2.PROCEDURE,
-                command="execute_procedure",
-            )
-        )
-
-        procedure_request.parameters.extend([
+    procedure_request.parameters.extend(
+        [
             execution_engine_pb2.Parameter(
                 name="schema",
                 string_value="public",
@@ -55,61 +46,80 @@ async def test_workflow_grpc_ascii_validation():
                 name="procedure",
                 string_value="calculate_ascii_metadata",
             ),
-        ])
+        ]
+    )
 
-        async for response in stub.Execute(
-            procedure_request
-        ):
-            assert response.success is True
+    async def procedure_request_stream():
 
-        #
-        # Read data through gRPC
-        #
-        sql_request = (
-            execution_engine_pb2.CommandRequest(
-                type=execution_engine_pb2.SQL,
-                command="""
-                SELECT *
-                FROM workflow_ascii
-                ORDER BY random()
-                LIMIT 100
-                """,
-            )
+        yield procedure_request
+
+    async for response in grpc_stub.Execute(
+        procedure_request_stream()
+    ):
+
+        assert response.success is True
+
+    #
+    # Read data through gRPC
+    #
+    sql_request = (
+        execution_engine_pb2.CommandRequest(
+            type=execution_engine_pb2.SQL,
+            command="""
+            SELECT *
+            FROM workflow_ascii
+            ORDER BY random()
+            LIMIT 100
+            """,
+        )
+    )
+
+    async def sql_request_stream():
+
+        yield sql_request
+
+    validated_rows = 0
+
+    async for response in grpc_stub.Execute(
+        sql_request_stream()
+    ):
+
+        assert response.success is True
+
+        table = (
+            ipc.open_stream(
+                io.BytesIO(
+                    response.payload
+                )
+            ).read_all()
         )
 
-        validated_rows = 0
+        data = table.to_pylist()
 
-        async for response in stub.Execute(
-            sql_request
-        ):
+        for row in data:
 
-            assert response.success is True
-
-            table = (
-                ipc.open_stream(
-                    io.BytesIO(response.payload)
-                ).read_all()
+            expected_word = (
+                chr(row["ascii1"])
+                + chr(row["ascii2"])
+                + chr(row["ascii3"])
             )
 
-            data = table.to_pylist()
+            expected_sum = (
+                row["ascii1"]
+                + row["ascii2"]
+                + row["ascii3"]
+            )
 
-            for row in data:
+            assert (
+                row["word"]
+                == expected_word
+            )
 
-                expected_word = (
-                    chr(row["ascii1"]) +
-                    chr(row["ascii2"]) +
-                    chr(row["ascii3"])
-                )
+            assert (
+                row["sum"]
+                == expected_sum
+            )
 
-                expected_sum = (
-                    row["ascii1"] +
-                    row["ascii2"] +
-                    row["ascii3"]
-                )
+            validated_rows += 1
 
-                assert row["word"] == expected_word
-                assert row["sum"] == expected_sum
-
-                validated_rows += 1
-
-        assert validated_rows == 100
+    assert validated_rows == 100

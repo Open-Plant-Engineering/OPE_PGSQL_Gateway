@@ -3,9 +3,8 @@ syntax = "proto3";
 package gee.v1;
 
 service ExecutionEngine {
-    rpc Execute(CommandRequest)
+    rpc Execute(stream CommandRequest)
         returns (stream CommandResponse);
-
 }
 
 enum CommandType {

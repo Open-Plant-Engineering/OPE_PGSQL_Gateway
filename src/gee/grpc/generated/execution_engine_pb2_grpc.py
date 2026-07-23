@@ -36,7 +36,7 @@ class ExecutionEngineStub:
         Args:
             channel: A grpc.Channel.
         """
-        self.Execute = channel.unary_stream(
+        self.Execute = channel.stream_stream(
                 '/gee.v1.ExecutionEngine/Execute',
                 request_serializer=execution__engine__pb2.CommandRequest.SerializeToString,
                 response_deserializer=execution__engine__pb2.CommandResponse.FromString,
@@ -46,7 +46,7 @@ class ExecutionEngineStub:
 class ExecutionEngineServicer:
     """Missing associated documentation comment in .proto file."""
 
-    def Execute(self, request, context):
+    def Execute(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -55,7 +55,7 @@ class ExecutionEngineServicer:
 
 def add_ExecutionEngineServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Execute': grpc.unary_stream_rpc_method_handler(
+            'Execute': grpc.stream_stream_rpc_method_handler(
                     servicer.Execute,
                     request_deserializer=execution__engine__pb2.CommandRequest.FromString,
                     response_serializer=execution__engine__pb2.CommandResponse.SerializeToString,
@@ -72,7 +72,7 @@ class ExecutionEngine:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def Execute(request,
+    def Execute(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -82,8 +82,8 @@ class ExecutionEngine:
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
+        return grpc.experimental.stream_stream(
+            request_iterator,
             target,
             '/gee.v1.ExecutionEngine/Execute',
             execution__engine__pb2.CommandRequest.SerializeToString,

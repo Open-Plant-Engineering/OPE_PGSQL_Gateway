@@ -1,21 +1,18 @@
 import io
 
-import grpc
 import pytest
 import pyarrow.ipc as ipc
 
-from gee.config.settings import Settings
-from gee.postgres.pool import PostgresPool
-from gee.postgres.database_service import DatabaseService
-
 from gee.grpc.generated import (
     execution_engine_pb2,
-    execution_engine_pb2_grpc,
 )
 
 
 @pytest.mark.asyncio
-async def test_grpc_function_stream(database_service):
+async def test_grpc_function_stream(
+    database_service,
+    grpc_stub,
+):
 
     await database_service.sql.execute(
         """
@@ -27,28 +24,24 @@ async def test_grpc_function_stream(database_service):
         BEGIN
             RETURN QUERY
             SELECT *
-            FROM generate_series(1, max_value);
+            FROM generate_series(
+                1,
+                max_value
+            );
         END;
         $$ LANGUAGE plpgsql;
         """
     )
 
-    async with grpc.aio.insecure_channel(
-        "localhost:50051"
-    ) as channel:
-
-        stub = (
-            execution_engine_pb2_grpc.ExecutionEngineStub(
-                channel
-            )
-        )
-
-        request = execution_engine_pb2.CommandRequest(
+    request = (
+        execution_engine_pb2.CommandRequest(
             type=execution_engine_pb2.FUNCTION,
             command="execute_function",
         )
+    )
 
-        request.parameters.extend([
+    request.parameters.extend(
+        [
             execution_engine_pb2.Parameter(
                 name="schema",
                 string_value="public",
@@ -61,26 +54,35 @@ async def test_grpc_function_stream(database_service):
                 name="max_value",
                 int_value=10000,
             ),
-        ])
+        ]
+    )
 
-        response_stream = stub.Execute(request)
+    async def request_stream():
 
-        batch_count = 0
-        total_rows = 0
+        yield request
 
-        async for response in response_stream:
+    batch_count = 0
 
-            assert response.success is True
+    total_rows = 0
 
-            batch_count += 1
+    async for response in grpc_stub.Execute(
+        request_stream()
+    ):
 
-            table = (
-                ipc.open_stream(
-                    io.BytesIO(response.payload)
-                ).read_all()
-            )
+        assert response.success is True
 
-            total_rows += table.num_rows
+        batch_count += 1
 
-        assert batch_count == 10
-        assert total_rows == 10000
+        table = (
+            ipc.open_stream(
+                io.BytesIO(
+                    response.payload
+                )
+            ).read_all()
+        )
+
+        total_rows += table.num_rows
+
+    assert batch_count == 10
+
+    assert total_rows == 10000
