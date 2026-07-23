@@ -6,23 +6,9 @@ from gee.postgres.database_service import DatabaseService
 
 
 @pytest.mark.asyncio
-async def test_sql_parameters():
+async def test_sql_parameters(database_service):
 
-    settings = Settings()
-
-    pool = PostgresPool()
-
-    await pool.connect(
-        host=settings.pg_host,
-        port=settings.pg_port,
-        database=settings.pg_database,
-        user=settings.pg_user,
-        password=settings.pg_password,
-    )
-
-    db = DatabaseService(pool)
-
-    rows = await db.sql.execute(
+    rows = await database_service.sql.execute(
         """
         SELECT
             $1::integer + $2::integer

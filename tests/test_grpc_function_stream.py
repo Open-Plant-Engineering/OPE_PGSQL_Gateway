@@ -15,23 +15,9 @@ from gee.grpc.generated import (
 
 
 @pytest.mark.asyncio
-async def test_grpc_function_stream():
+async def test_grpc_function_stream(database_service):
 
-    settings = Settings()
-
-    pool = PostgresPool()
-
-    await pool.connect(
-        host=settings.pg_host,
-        port=settings.pg_port,
-        database=settings.pg_database,
-        user=settings.pg_user,
-        password=settings.pg_password,
-    )
-
-    db = DatabaseService(pool)
-
-    await db.sql.execute(
+    await database_service.sql.execute(
         """
         CREATE OR REPLACE FUNCTION public.generate_numbers(
             max_value integer

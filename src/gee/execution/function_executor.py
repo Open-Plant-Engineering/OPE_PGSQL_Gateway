@@ -2,68 +2,96 @@ import asyncpg
 
 
 class FunctionExecutor:
-    def __init__(self, pool: asyncpg.Pool):
-        self._pool = pool
+
+    def __init__(
+        self,
+        connection_pool: asyncpg.Pool,
+    ):
+        self._connection_pool = (
+            connection_pool
+        )
 
     async def execute(
         self,
-        schema: str,
+        schema_name: str,
         function_name: str,
-        *params,
+        *function_parameters,
     ):
-        placeholders = [
-            f"${idx + 1}"
-            for idx in range(len(params))
+
+        parameter_placeholders = [
+            f"${index + 1}"
+            for index in range(
+                len(function_parameters)
+            )
         ]
 
         sql = (
             f"SELECT * "
-            f"FROM {schema}.{function_name}"
-            f"({','.join(placeholders)})"
+            f"FROM {schema_name}.{function_name}"
+            f"({','.join(parameter_placeholders)})"
         )
 
-        async with self._pool.acquire() as conn:
-            rows = await conn.fetch(sql, *params)
+        async with (
+            self._connection_pool.acquire()
+        ) as connection:
+
+            rows = await connection.fetch(
+                sql,
+                *function_parameters,
+            )
 
         return rows
 
     async def stream(
         self,
-        schema: str,
+        schema_name: str,
         function_name: str,
-        *params,
+        *function_parameters,
         batch_size: int = 1000,
     ):
-        placeholders = [
-            f"${idx + 1}"
-            for idx in range(len(params))
+
+        parameter_placeholders = [
+            f"${index + 1}"
+            for index in range(
+                len(function_parameters)
+            )
         ]
 
         sql = (
             f"SELECT * "
-            f"FROM {schema}.{function_name}"
-            f"({','.join(placeholders)})"
+            f"FROM {schema_name}.{function_name}"
+            f"({','.join(parameter_placeholders)})"
         )
 
-        async with self._pool.acquire() as conn:
+        async with (
+            self._connection_pool.acquire()
+        ) as connection:
 
-            async with conn.transaction():
+            async with connection.transaction():
 
-                cursor = conn.cursor(
+                cursor = connection.cursor(
                     sql,
-                    *params,
+                    *function_parameters,
                     prefetch=batch_size,
                 )
 
-                batch = []
+                current_batch = []
 
                 async for row in cursor:
 
-                    batch.append(row)
+                    current_batch.append(
+                        row
+                    )
 
-                    if len(batch) >= batch_size:
-                        yield batch
-                        batch = []
+                    if (
+                        len(current_batch)
+                        >= batch_size
+                    ):
 
-                if batch:
-                    yield batch
+                        yield current_batch
+
+                        current_batch = []
+
+                if current_batch:
+
+                    yield current_batch

@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import grpc
 
 from gee.grpc.generated import (
@@ -17,20 +18,19 @@ from gee.execution.execution_engine import (
     ExecutionEngine,
 )
 
+from gee.config.config_loader import (
+    ConfigLoader,
+)
 
 async def serve():
 
-    settings = Settings()
+    profile_name = sys.argv[1]
+    
+    settings = ConfigLoader.load(profile_name)
 
-    pool = PostgresPool()
+    pool = PostgresPool(settings)
 
-    await pool.connect(
-        host=settings.pg_host,
-        port=settings.pg_port,
-        database=settings.pg_database,
-        user=settings.pg_user,
-        password=settings.pg_password,
-    )
+    await pool.connect()
 
     db = DatabaseService(pool)
 
@@ -44,14 +44,14 @@ async def serve():
     )
 
     server.add_insecure_port(
-        f"{settings.grpc_host}:{settings.grpc_port}"
+        f"{settings.grpc.host}:{settings.grpc.port}"
     )
 
     await server.start()
 
     print(
         f"Server running on "
-        f"{settings.grpc_host}:{settings.grpc_port}"
+        f"{settings.grpc.host}:{settings.grpc.port}"
     )
 
     await server.wait_for_termination()

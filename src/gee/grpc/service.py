@@ -5,7 +5,7 @@ from gee.grpc.generated import (
 
 from gee.execution.execution_engine import ExecutionEngine
 
-from gee.models.command import Command
+from gee.models.execution_command import Command
 from gee.models.command_type import CommandType
 
 from gee.arrow.stream_serializer import (

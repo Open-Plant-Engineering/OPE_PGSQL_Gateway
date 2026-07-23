@@ -1,0 +1,17 @@
+[profiles.ope.postgres]
+
+host = "localhost"
+port = 5433
+database = "ope"
+
+user = "postgres"
+password = "postgres"
+
+min_pool_size = 5
+max_pool_size = 20
+
+
+[profiles.ope.grpc]
+
+host = "0.0.0.0"
+port = 50051

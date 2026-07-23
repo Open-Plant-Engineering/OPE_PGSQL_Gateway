@@ -6,7 +6,7 @@ from gee.postgres.database_service import DatabaseService
 
 
 @pytest.mark.asyncio
-async def test_workflow_db_ascii_validation():
+async def test_workflow_db_ascii_validation(database_service):
     """
     Workflow:
 
@@ -18,30 +18,15 @@ async def test_workflow_db_ascii_validation():
               ↓
         Validate Sum
     """
-
-    settings = Settings()
-
-    pool = PostgresPool()
-
-    await pool.connect(
-        host=settings.pg_host,
-        port=settings.pg_port,
-        database=settings.pg_database,
-        user=settings.pg_user,
-        password=settings.pg_password,
-    )
-
-    db = DatabaseService(pool)
-
     #
     # Execute procedure before validation
     #
-    await db.procedure.execute(
+    await database_service.procedure.execute(
         "public",
         "calculate_ascii_metadata",
     )
 
-    rows = await db.sql.execute(
+    rows = await database_service.sql.execute(
         """
         SELECT *
         FROM workflow_ascii

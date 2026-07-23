@@ -3,27 +3,42 @@ import asyncpg
 
 class PostgresPool:
 
-    def __init__(self):
-        self._pool = None
-
-    async def connect(
+    def __init__(
         self,
-        host: str,
-        port: int,
-        database: str,
-        user: str,
-        password: str,
+        settings,
     ):
-        self._pool = await asyncpg.create_pool(
-            host=host,
-            port=port,
-            database=database,
-            user=user,
-            password=password,
-            min_size=5,
-            max_size=20,
+        self._settings = settings
+
+        self._connection_pool = None
+
+    async def connect(self):
+    
+        postgres = (
+            self._settings.postgres
+        )
+    
+        self._connection_pool = (
+            await asyncpg.create_pool(
+                host=postgres.host,
+                port=postgres.port,
+                database=postgres.database,
+                user=postgres.user,
+                password=postgres.password,
+                min_size=postgres.min_pool_size,
+                max_size=postgres.max_pool_size,
+            )
         )
 
+    async def close(
+        self,
+    ):
+
+        if self._connection_pool:
+
+            await self._connection_pool.close()
+
     @property
-    def pool(self):
-        return self._pool
+    def pool(
+        self,
+    ):
+        return self._connection_pool

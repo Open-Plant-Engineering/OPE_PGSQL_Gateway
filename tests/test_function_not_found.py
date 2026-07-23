@@ -6,25 +6,11 @@ from gee.postgres.database_service import DatabaseService
 
 
 @pytest.mark.asyncio
-async def test_function_not_found():
-
-    settings = Settings()
-
-    pool = PostgresPool()
-
-    await pool.connect(
-        host=settings.pg_host,
-        port=settings.pg_port,
-        database=settings.pg_database,
-        user=settings.pg_user,
-        password=settings.pg_password,
-    )
-
-    db = DatabaseService(pool)
+async def test_function_not_found(database_service):
 
     with pytest.raises(Exception):
 
-        await db.function.execute(
+        await database_service.function.execute(
             "public",
             "function_that_does_not_exist",
         )

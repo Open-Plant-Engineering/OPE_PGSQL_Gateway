@@ -1,12 +1,18 @@
 from pydantic import BaseModel
 
+from gee.config.postgres_settings import (
+    PostgresSettings,
+)
+
+from gee.config.grpc_settings import (
+    GrpcSettings,
+)
+
 
 class Settings(BaseModel):
-    grpc_host: str = "0.0.0.0"
-    grpc_port: int = 50051
 
-    pg_host: str = "localhost"
-    pg_port: int = 5433
-    pg_database: str = "ope"
-    pg_user: str = "postgres"
-    pg_password: str = "postgres"
+    profile_name: str
+
+    postgres: PostgresSettings
+
+    grpc: GrpcSettings

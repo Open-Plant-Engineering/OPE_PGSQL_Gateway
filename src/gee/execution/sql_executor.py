@@ -2,18 +2,28 @@ import asyncpg
 
 
 class SqlExecutor:
-    def __init__(self, pool: asyncpg.Pool):
-        self._pool = pool
+
+    def __init__(
+        self,
+        connection_pool: asyncpg.Pool,
+    ):
+        self._connection_pool = (
+            connection_pool
+        )
 
     async def execute(
         self,
         sql: str,
-        *params,
+        *parameters,
     ):
-        async with self._pool.acquire() as conn:
-            rows = await conn.fetch(
+
+        async with (
+            self._connection_pool.acquire()
+        ) as connection:
+
+            rows = await connection.fetch(
                 sql,
-                *params,
+                *parameters,
             )
 
         return rows
@@ -21,28 +31,39 @@ class SqlExecutor:
     async def stream(
         self,
         sql: str,
-        *params,
+        *parameters,
         batch_size: int = 1000,
     ):
-        async with self._pool.acquire() as conn:
 
-            async with conn.transaction():
+        async with (
+            self._connection_pool.acquire()
+        ) as connection:
 
-                cursor = conn.cursor(
+            async with connection.transaction():
+
+                cursor = connection.cursor(
                     sql,
-                    *params,
+                    *parameters,
                     prefetch=batch_size,
                 )
 
-                batch = []
+                current_batch = []
 
                 async for row in cursor:
 
-                    batch.append(row)
+                    current_batch.append(
+                        row
+                    )
 
-                    if len(batch) >= batch_size:
-                        yield batch
-                        batch = []
+                    if (
+                        len(current_batch)
+                        >= batch_size
+                    ):
 
-                if batch:
-                    yield batch
+                        yield current_batch
+
+                        current_batch = []
+
+                if current_batch:
+
+                    yield current_batch

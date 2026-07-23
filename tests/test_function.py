@@ -6,23 +6,9 @@ from gee.postgres.database_service import DatabaseService
 
 
 @pytest.mark.asyncio
-async def test_add_numbers():
+async def test_add_numbers(database_service):
 
-    settings = Settings()
-
-    pool = PostgresPool()
-
-    await pool.connect(
-        host=settings.pg_host,
-        port=settings.pg_port,
-        database=settings.pg_database,
-        user=settings.pg_user,
-        password=settings.pg_password,
-    )
-
-    db = DatabaseService(pool)
-
-    await db.sql.execute(
+    await database_service.sql.execute(
         """
         CREATE OR REPLACE FUNCTION public.add_numbers(
             a integer,
@@ -37,7 +23,7 @@ async def test_add_numbers():
         """
     )
 
-    rows = await db.function.execute(
+    rows = await database_service.function.execute(
         "public",
         "add_numbers",
         10,

@@ -2,26 +2,41 @@ import asyncpg
 
 
 class ProcedureExecutor:
-    def __init__(self, pool: asyncpg.Pool):
-        self._pool = pool
+
+    def __init__(
+        self,
+        connection_pool: asyncpg.Pool,
+    ):
+        self._connection_pool = (
+            connection_pool
+        )
 
     async def execute(
         self,
-        schema: str,
+        schema_name: str,
         procedure_name: str,
-        *params,
+        *procedure_parameters,
     ):
-        placeholders = [
-            f"${idx + 1}"
-            for idx in range(len(params))
+
+        parameter_placeholders = [
+            f"${index + 1}"
+            for index in range(
+                len(procedure_parameters)
+            )
         ]
 
         sql = (
-            f"CALL {schema}.{procedure_name}"
-            f"({','.join(placeholders)})"
+            f"CALL {schema_name}.{procedure_name}"
+            f"({','.join(parameter_placeholders)})"
         )
 
-        async with self._pool.acquire() as conn:
-            await conn.execute(sql, *params)
+        async with (
+            self._connection_pool.acquire()
+        ) as connection:
+
+            await connection.execute(
+                sql,
+                *procedure_parameters,
+            )
 
         return True
