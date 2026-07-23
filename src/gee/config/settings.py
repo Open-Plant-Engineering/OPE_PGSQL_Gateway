@@ -8,6 +8,10 @@ from gee.config.grpc_settings import (
     GrpcSettings,
 )
 
+from gee.config.streaming_settings import (
+    StreamingSettings,
+)
+
 
 class Settings(BaseModel):
 
@@ -16,3 +20,5 @@ class Settings(BaseModel):
     postgres: PostgresSettings
 
     grpc: GrpcSettings
+
+    streaming: StreamingSettings

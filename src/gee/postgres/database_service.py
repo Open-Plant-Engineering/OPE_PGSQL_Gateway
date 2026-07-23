@@ -10,18 +10,26 @@ class DatabaseService:
     def __init__(
         self,
         connection_pool,
+        settings,
     ):
+        self._settings = settings
+        batch_size = (
+            self._settings.streaming.batch_size
+        )
+
         self._connection_pool = (
             connection_pool
         )
 
         self._sql_executor = SqlExecutor(
-            self._connection_pool.pool
+            self._connection_pool.pool,
+            batch_size=batch_size
         )
 
         self._function_executor = (
             FunctionExecutor(
-                self._connection_pool.pool
+                self._connection_pool.pool,
+                batch_size=batch_size
             )
         )
 

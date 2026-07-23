@@ -35,10 +35,11 @@ async def postgres_pool(settings):
 
 
 @pytest_asyncio.fixture
-async def database_service(postgres_pool):
+async def database_service(postgres_pool, settings):
 
     yield DatabaseService(
-        postgres_pool
+        postgres_pool,
+        settings,
     )
 
 

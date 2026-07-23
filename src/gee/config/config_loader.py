@@ -56,4 +56,7 @@ class ConfigLoader:
             grpc=profile[
                 "grpc"
             ],
+            streaming=profile[
+                "streaming"
+            ]
         )
