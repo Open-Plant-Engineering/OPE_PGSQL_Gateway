@@ -6,7 +6,7 @@ import pyarrow.ipc as ipc
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
-from gee.postgres.database import DatabaseService
+from gee.postgres.database_service import DatabaseService
 
 from gee.grpc.generated import (
     execution_engine_pb2,

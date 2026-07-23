@@ -41,11 +41,6 @@ class ExecutionEngineStub:
                 request_serializer=execution__engine__pb2.CommandRequest.SerializeToString,
                 response_deserializer=execution__engine__pb2.CommandResponse.FromString,
                 _registered_method=True)
-        self.ExecuteStream = channel.stream_stream(
-                '/gee.v1.ExecutionEngine/ExecuteStream',
-                request_serializer=execution__engine__pb2.CommandChunk.SerializeToString,
-                response_deserializer=execution__engine__pb2.CommandResponse.FromString,
-                _registered_method=True)
 
 
 class ExecutionEngineServicer:
@@ -57,23 +52,12 @@ class ExecutionEngineServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def ExecuteStream(self, request_iterator, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_ExecutionEngineServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Execute': grpc.unary_stream_rpc_method_handler(
                     servicer.Execute,
                     request_deserializer=execution__engine__pb2.CommandRequest.FromString,
-                    response_serializer=execution__engine__pb2.CommandResponse.SerializeToString,
-            ),
-            'ExecuteStream': grpc.stream_stream_rpc_method_handler(
-                    servicer.ExecuteStream,
-                    request_deserializer=execution__engine__pb2.CommandChunk.FromString,
                     response_serializer=execution__engine__pb2.CommandResponse.SerializeToString,
             ),
     }
@@ -103,33 +87,6 @@ class ExecutionEngine:
             target,
             '/gee.v1.ExecutionEngine/Execute',
             execution__engine__pb2.CommandRequest.SerializeToString,
-            execution__engine__pb2.CommandResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ExecuteStream(request_iterator,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_stream(
-            request_iterator,
-            target,
-            '/gee.v1.ExecutionEngine/ExecuteStream',
-            execution__engine__pb2.CommandChunk.SerializeToString,
             execution__engine__pb2.CommandResponse.FromString,
             options,
             channel_credentials,

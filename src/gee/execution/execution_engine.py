@@ -3,72 +3,112 @@ from gee.models.command_type import CommandType
 
 class ExecutionEngine:
 
-    def __init__(self, database):
-        self._database = database
+    def __init__(
+        self,
+        database_service,
+    ):
+        self._database_service = (
+            database_service
+        )
 
-    async def execute(self, command):
+    async def execute(
+        self,
+        command,
+    ):
 
         if command.type == CommandType.SQL:
-            return await self._database.sql.execute(
-                command.command,
-                *command.parameters,
+
+            return await (
+                self._database_service.sql.execute(
+                    command.command,
+                    *command.parameters,
+                )
             )
 
         if command.type == CommandType.FUNCTION:
 
-            schema = command.parameters[0]
-            function_name = command.parameters[1]
+            schema_name = command.parameters[0]
 
-            params = command.parameters[2:]
+            function_name = (
+                command.parameters[1]
+            )
 
-            return await self._database.function.execute(
-                schema,
-                function_name,
-                *params,
+            function_parameters = (
+                command.parameters[2:]
+            )
+
+            return await (
+                self._database_service.function.execute(
+                    schema_name,
+                    function_name,
+                    *function_parameters,
+                )
             )
 
         if command.type == CommandType.PROCEDURE:
 
-            schema = command.parameters[0]
-            procedure_name = command.parameters[1]
+            schema_name = command.parameters[0]
 
-            params = command.parameters[2:]
+            procedure_name = (
+                command.parameters[1]
+            )
 
-            return await self._database.procedure.execute(
-                schema,
-                procedure_name,
-                *params,
+            procedure_parameters = (
+                command.parameters[2:]
+            )
+
+            return await (
+                self._database_service.procedure.execute(
+                    schema_name,
+                    procedure_name,
+                    *procedure_parameters,
+                )
             )
 
         raise NotImplementedError(
             f"Unsupported command type: {command.type}"
         )
 
-    async def stream(self, command):
+    async def stream(
+        self,
+        command,
+    ):
 
         if command.type == CommandType.SQL:
 
-            async for batch in self._database.sql.stream(
-                command.command,
-                *command.parameters,
+            async for batch in (
+                self._database_service.sql.stream(
+                    command.command,
+                    *command.parameters,
+                )
             ):
                 yield batch
 
-        elif command.type == CommandType.FUNCTION:
+            return
 
-            schema = command.parameters[0]
-            function_name = command.parameters[1]
+        if command.type == CommandType.FUNCTION:
 
-            params = command.parameters[2:]
+            schema_name = command.parameters[0]
 
-            async for batch in self._database.function.stream(
-                schema,
-                function_name,
-                *params,
-            ):
-                yield batch
-
-        else:
-            raise NotImplementedError(
-                f"Streaming not implemented for {command.type}"
+            function_name = (
+                command.parameters[1]
             )
+
+            function_parameters = (
+                command.parameters[2:]
+            )
+
+            async for batch in (
+                self._database_service.function.stream(
+                    schema_name,
+                    function_name,
+                    *function_parameters,
+                )
+            ):
+                yield batch
+
+            return
+
+        raise NotImplementedError(
+            f"Streaming not implemented for {command.type}"
+        )

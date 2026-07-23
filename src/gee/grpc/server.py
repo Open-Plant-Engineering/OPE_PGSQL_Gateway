@@ -11,7 +11,7 @@ from gee.grpc.service import (
 )
 
 from gee.postgres.pool import PostgresPool
-from gee.postgres.database import DatabaseService
+from gee.postgres.database_service import DatabaseService
 
 from gee.execution.execution_engine import (
     ExecutionEngine,

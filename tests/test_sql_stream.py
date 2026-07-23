@@ -2,7 +2,7 @@ import pytest
 
 from gee.config.settings import Settings
 from gee.postgres.pool import PostgresPool
-from gee.postgres.database import DatabaseService
+from gee.postgres.database_service import DatabaseService
 
 from gee.arrow.stream_serializer import (
     ArrowStreamSerializer,

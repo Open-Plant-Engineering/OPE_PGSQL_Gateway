@@ -6,9 +6,6 @@ service ExecutionEngine {
     rpc Execute(CommandRequest)
         returns (stream CommandResponse);
 
-    rpc ExecuteStream(stream CommandChunk)
-        returns (stream CommandResponse);
-
 }
 
 enum CommandType {
@@ -37,23 +34,11 @@ message CommandRequest {
     repeated Parameter parameters = 3;
 }
 
-message CommandChunk {
-    string request_id = 1;
-
-    bytes payload = 2;
-}
-
 message CommandResponse {
     bool success = 1;
 
     string message = 2;
 
     bytes payload = 3;
-}
-
-message ProcedureInputChunk {
-    string session_id = 1;
-
-    bytes arrow_payload = 2;
 }
 
