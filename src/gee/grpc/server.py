@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import sys
 
 import grpc
@@ -28,6 +29,19 @@ from gee.execution.execution_engine import (
 )
 
 
+logging.basicConfig(
+    level=logging.INFO,
+    format=(
+        "%(asctime)s "
+        "%(levelname)s "
+        "%(name)s "
+        "%(message)s"
+    ),
+)
+
+logger = logging.getLogger(__name__)
+
+
 async def serve():
 
     if len(sys.argv) != 2:
@@ -52,7 +66,7 @@ async def serve():
 
     database_service = DatabaseService(
         postgres_pool,
-        settings
+        settings,
     )
 
     execution_engine = ExecutionEngine(
@@ -78,31 +92,48 @@ async def serve():
 
     await grpc_server.start()
 
-    print()
-    print("GEE Server Started")
-    print("-" * 50)
-    print(
-        f"Profile : "
-        f"{settings.profile_name}"
+    logger.info(
+        "GEE Server Started"
     )
-    print(
-        f"Postgres: "
-        f"{settings.postgres.host}:"
-        f"{settings.postgres.port}"
-    )
-    print(
-        f"Database: "
-        f"{settings.postgres.database}"
-    )
-    print(
-        f"gRPC    : "
-        f"{settings.grpc.host}:"
-        f"{settings.grpc.port}"
-    )
-    print("-" * 50)
-    print()
 
-    await grpc_server.wait_for_termination()
+    logger.info(
+        "Profile=%s",
+        settings.profile_name,
+    )
+
+    logger.info(
+        "Postgres=%s:%s",
+        settings.postgres.host,
+        settings.postgres.port,
+    )
+
+    logger.info(
+        "Database=%s",
+        settings.postgres.database,
+    )
+
+    logger.info(
+        "BatchSize=%s",
+        settings.streaming.batch_size,
+    )
+
+    logger.info(
+        "gRPC=%s:%s",
+        settings.grpc.host,
+        settings.grpc.port,
+    )
+
+    try:
+
+        await grpc_server.wait_for_termination()
+
+    finally:
+
+        logger.info(
+            "Closing PostgreSQL pool"
+        )
+
+        await postgres_pool.close()
 
 
 if __name__ == "__main__":
