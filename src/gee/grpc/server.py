@@ -79,7 +79,8 @@ async def serve():
         execution_engine_pb2_grpc
         .add_ExecutionEngineServicer_to_server(
             ExecutionEngineService(
-                execution_engine
+                execution_engine,
+                settings,
             ),
             grpc_server,
         )

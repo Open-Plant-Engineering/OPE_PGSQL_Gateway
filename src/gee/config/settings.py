@@ -12,6 +12,9 @@ from gee.config.streaming_settings import (
     StreamingSettings,
 )
 
+from gee.config.execution_settings import (
+    ExecutionSettings,
+)
 
 class Settings(BaseModel):
 
@@ -22,3 +25,5 @@ class Settings(BaseModel):
     grpc: GrpcSettings
 
     streaming: StreamingSettings
+
+    execution: ExecutionSettings

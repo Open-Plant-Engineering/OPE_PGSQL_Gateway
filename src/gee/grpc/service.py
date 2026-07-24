@@ -1,6 +1,8 @@
 import logging
 import time
 
+from gee.config.settings import Settings
+
 from gee.grpc.generated import (
     execution_engine_pb2,
     execution_engine_pb2_grpc,
@@ -33,10 +35,12 @@ class ExecutionEngineService(
     def __init__(
         self,
         execution_engine: ExecutionEngine,
+        settings: Settings,
     ):
         self._execution_engine = (
             execution_engine
         )
+        self._settings = settings
 
     async def Execute(
         self,
@@ -46,11 +50,20 @@ class ExecutionEngineService(
 
         async for request in request_iterator:
 
+            if context.cancelled():
+            
+                logger.warning(
+                    "Client cancelled request stream"
+                )
+
+                return
+
             start_time = (
                 time.perf_counter()
             )
 
             try:
+                self._validate_request(request)
 
                 if (
                     request.type
@@ -195,7 +208,14 @@ class ExecutionEngineService(
                         command
                     )
                 ):
+                    if context.cancelled():
+                    
+                        logger.warning(
+                            "Client cancelled request stream"
+                        )
 
+                        return
+                    
                     batch_count += 1
 
                     payload = (
@@ -240,5 +260,56 @@ class ExecutionEngineService(
 
                 logger.exception(
                     "Command=%s Failed",
-                    request.type,
+                    command_type.name
+                    if "command_type" in locals()
+                    else request.type,
+                )
+
+    def _validate_request(
+        self,
+        request,
+    ):
+        if not request.command.strip():
+
+            raise ValueError(
+                "Command cannot be empty"
+            )
+
+        parameter_names = {
+            parameter.name
+            for parameter in request.parameters
+        }
+
+        if (
+            request.type
+            == execution_engine_pb2.FUNCTION
+        ):
+
+            if "schema" not in parameter_names:
+
+                raise ValueError(
+                    "Missing function parameter: schema"
+                )
+
+            if "function" not in parameter_names:
+
+                raise ValueError(
+                    "Missing function parameter: function"
+                )
+
+        elif (
+            request.type
+            == execution_engine_pb2.PROCEDURE
+        ):
+
+            if "schema" not in parameter_names:
+
+                raise ValueError(
+                    "Missing procedure parameter: schema"
+                )
+
+            if "procedure" not in parameter_names:
+
+                raise ValueError(
+                    "Missing procedure parameter: procedure"
                 )

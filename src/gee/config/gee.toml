@@ -19,3 +19,7 @@ port = 50051
 [profiles.ope.streaming]
 
 batch_size = 1000
+
+[profiles.ope.execution]
+
+timeout_seconds = 300

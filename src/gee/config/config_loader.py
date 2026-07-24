@@ -58,5 +58,8 @@ class ConfigLoader:
             ],
             streaming=profile[
                 "streaming"
-            ]
+            ],
+            execution=profile[
+                "execution"
+            ],
         )
